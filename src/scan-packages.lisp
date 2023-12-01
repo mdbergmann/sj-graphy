@@ -1,16 +1,20 @@
 (defpackage :graphy.scan-packages
   (:use :cl)
   (:nicknames :spak)
-  (:export #:scan-packages)
+  (:export #:scan-project
+           #:scan-packages)
   )
 
 (in-package :graphy.scan-packages)
 
-(defun scan-packages (path source-type)
+(defun scan-project (path source-type)
+  "`PATH' is the root path to a Java/Scala project whichg has a folder structure of
+'src/main/scala' or 'src/test/scala' beneath.
+Where `SOURCE-TYPE' defines the 'main or 'test' part.
+Specify `:source' for 'main' and `:test' for 'test'."
   (check-type path string)
-
-  (unless (str:ends-with-p "/" path)
-    (setf path (concatenate 'string path "/")))
+  
+  (setf path (%ensure-proper-path path))
 
   ;;(format t "~%path: ~a~%" path)
   (let ((real-path (case source-type
@@ -18,14 +22,26 @@
                       (uiop:subpathname path "src/main/scala"))
                      ;; maybe :test
                      )))
-    ;;(format t "real-path: ~a~%" real-path)
-    (fset:reduce (lambda (accu dir)
-                   (let ((paks (%scan-dir dir (fset:empty-set))))
-                     (if (fset:nonempty? paks)
-                         (fset:union accu paks)
-                         accu)))
-                 (uiop:subdirectories real-path)
-                 :initial-value (fset:empty-set))))
+    (scan-packages real-path)))
+
+    
+(defun scan-packages (path)
+  "Scans for packages (which are folders that contains a source file) in the given path."
+  (check-type path pathname)
+
+  ;;(format t "real-path: ~a~%" real-path)
+  (fset:reduce (lambda (accu dir)
+                 (let ((paks (%scan-dir dir (fset:empty-set))))
+                   (if (fset:nonempty? paks)
+                       (fset:union accu paks)
+                       accu)))
+               (uiop:subdirectories path)
+               :initial-value (fset:empty-set)))
+
+(defun %ensure-proper-path (path)
+  (if (str:ends-with-p "/" path)
+      path
+      (concatenate 'string path "/")))
 
 (defun %scan-dir (path package-accu)
   "Recursively scans path for subdirectories and returns a list of packages."
