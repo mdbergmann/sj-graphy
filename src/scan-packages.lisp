@@ -19,12 +19,13 @@
                      ;; maybe :test
                      )))
     ;;(format t "real-path: ~a~%" real-path)
-    (remove-duplicates
-     (loop :for dir :in (uiop:subdirectories real-path)
-           :for scanned-packages = (%scan-dir dir '())
-           :if scanned-packages
-             :append scanned-packages)
-     :key #'second)))
+    (fset:reduce (lambda (accu dir)
+                   (let ((paks (%scan-dir dir (fset:empty-set))))
+                     (if (fset:nonempty? paks)
+                         (fset:union accu paks)
+                         accu)))
+                 (uiop:subdirectories real-path)
+                 :initial-value (fset:empty-set))))
 
 (defun %scan-dir (path package-accu)
   "Recursively scans path for subdirectories and returns a list of packages."
@@ -36,21 +37,24 @@
       (let* ((package-name
                (first (last (pathname-directory path))))
              (prev-package
-               (reduce (lambda (accu pak)
-                         (%conc-package-name accu (second pak)))
-                       package-accu
-                       :initial-value ""))
+               (fset:reduce (lambda (accu pak)
+                              (%conc-package-name accu (second pak)))
+                            package-accu
+                            :initial-value ""))
              (new-package (%conc-package-name prev-package package-name)))
         (setf package-accu
-              (cons `(:package ,new-package) package-accu)))))
+              (fset:with package-accu `(:package ,new-package))))))
   (format t "package-accu ~a~%" package-accu)
 
   (let ((subdirs (uiop:subdirectories path)))
     (if subdirs
-        (reduce (lambda (accu dir)
-                  (append accu (%scan-dir dir package-accu)))
-                subdirs
-                :initial-value '())
+        (fset:reduce (lambda (accu dir)
+                       (let ((paks (%scan-dir dir package-accu)))
+                         (if (fset:nonempty? paks)
+                             (fset:union accu paks)
+                             accu)))
+                     subdirs
+                     :initial-value (fset:empty-set))
         package-accu)))
 
 (defun %filter-for-file-extension (files extension)

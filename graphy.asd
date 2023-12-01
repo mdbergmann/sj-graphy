@@ -4,7 +4,8 @@
   :description "Lisp tools for SQC"
   :depends-on ("alexandria"
                "binding-arrows"
-               "str")
+               "str"
+               "fset")
   :components ((:module "src"
                 :components
                 (
