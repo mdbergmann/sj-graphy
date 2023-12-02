@@ -11,6 +11,10 @@
 
 (in-suite scan-packages-tests)
 
+(test scan-packages--file-does-not-exist
+  "Scan packages in source root, but the file does not exist"
+  (signals simple-error (scan-project "test-projects/not-exists" :source)))
+
 (test scan-packages-none
   "Scan packages in source root, but there are no packages"
   (is (fset:equal? (fset:set) (scan-project "test-projects/proj0" :source))))
