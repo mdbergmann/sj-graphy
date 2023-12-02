@@ -3,7 +3,9 @@
   (:nicknames :spak)
   (:export #:scan-project
            #:scan-packages
-           #:*file-spec*)
+           #:*file-spec*
+           #:*default-source-root*
+           #:*source-file-type*)
   )
 
 (in-package :graphy.scan-packages)
