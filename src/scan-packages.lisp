@@ -34,7 +34,7 @@ Specify `:source' for 'main' and `:test' for 'test'."
 
   ;;(format t "real-path: ~a~%" real-path)
   (fset:reduce (lambda (accu dir)
-                 (let ((paks (%scan-dir dir "" (fset:empty-set))))
+                 (let ((paks (%collect-packages dir "" (fset:empty-set))))
                    (if (fset:nonempty? paks)
                        (fset:union accu paks)
                        accu)))
@@ -46,13 +46,13 @@ Specify `:source' for 'main' and `:test' for 'test'."
       path
       (concatenate 'string path "/")))
 
-(defun %scan-dir (path current-package package-accu)
+(defun %collect-packages (path current-package package-accu)
   "Recursively scans path for subdirectories and returns a list of packages.
 `PATH' is the path to scan.
 `CURRENT-PACKAGE' is the current package name, or position in the folder tree.
 `PACKAGE-ACCU' is the accumulator for the packages found so far.
 Returns a list of packages."
-  (let ((files (%filter-for-file-extension
+  (let ((files (%filter-for-file-spec
                 (uiop:directory-files path)
                 *file-spec*))
         (new-current-package)
@@ -72,7 +72,7 @@ Returns a list of packages."
              (let ((subdirs (uiop:subdirectories path)))
                (if subdirs
                    (fset:reduce (lambda (accu dir)
-                                  (let ((paks (%scan-dir dir new-current-package package-accu)))
+                                  (let ((paks (%collect-packages dir new-current-package package-accu)))
                                     (if (fset:nonempty? paks)
                                         (fset:union accu paks)
                                         accu)))
@@ -81,7 +81,7 @@ Returns a list of packages."
                    package-accu))))
       (descent-to-subfolders))))
 
-(defun %filter-for-file-extension (files file-spec)
+(defun %filter-for-file-spec (files file-spec)
   (remove-if-not (lambda (file)
                    (let ((filename (file-namestring file)))
                      (some (lambda (extension)
