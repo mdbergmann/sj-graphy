@@ -11,8 +11,10 @@
 (in-package :graphy.scan-packages)
 
 (defvar *default-source-root* "src")
-(defvar *source-file-type* "scala")
-(defvar *search-file-spec* '("*.scala"))
+(defvar *source-file-type* "scala"
+  "Part of the source root. E.g. 'scala' or 'java'.")
+(defparameter *search-file-spec* '(".scala")
+  "A list of file extensions to search for. E.g. '*.scala' or '*.java'.")
 
 (defun scan-project (path source-type)
   "`PATH' is the root path to a Java/Scala project whichg has a folder structure of
