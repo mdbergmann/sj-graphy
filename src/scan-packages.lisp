@@ -8,7 +8,9 @@
 
 (in-package :graphy.scan-packages)
 
-(defvar *file-spec* '("*.scala"))
+(defvar *default-source-root* "src")
+(defvar *source-file-type* "scala")
+(defvar *search-file-spec* '("*.scala"))
 
 (defun scan-project (path source-type)
   "`PATH' is the root path to a Java/Scala project whichg has a folder structure of
@@ -17,20 +19,34 @@ Where `SOURCE-TYPE' defines the 'main or 'test' part.
 Specify `:source' for 'main' and `:test' for 'test'."
   (check-type path string)
   
-  (setf path (%ensure-proper-path path))
+  (setf path (%ensure-no-trailing-slash path))
 
   ;;(format t "~%path: ~a~%" path)
-  (let ((real-path (case source-type
-                     (:source
-                      (uiop:subpathname path "src/main/scala"))
-                     ;; maybe :test
-                     )))
+  (let* ((source-type-dir (ecase source-type
+                            (:source "main")
+                            (:test "test")))
+         (real-path (make-pathname
+                     :directory
+                     (list :relative
+                           path
+                           *default-source-root*
+                           source-type-dir
+                           *source-file-type*))))
+    (format t "real-path: ~a~%" real-path)
+    (assert (probe-file real-path) nil "Path ~a does not exist." real-path)
     (scan-packages real-path)))
 
-    
+(defun %ensure-no-trailing-slash (path)
+  (if (str:ends-with-p "/" path)
+      (subseq path 0 (1- (length path)))
+      path))
+
 (defun scan-packages (path)
   "Scans for packages (which are folders that contains a source file) in the given path."
-  (check-type path pathname)
+  (check-type path (or pathname string))
+  (when (stringp path)
+    (setf path (pathname path)))
+  (assert (probe-file path) nil "Path ~a does not exist." path)
 
   ;;(format t "real-path: ~a~%" real-path)
   (fset:reduce (lambda (accu dir)
@@ -41,11 +57,6 @@ Specify `:source' for 'main' and `:test' for 'test'."
                (uiop:subdirectories path)
                :initial-value (fset:empty-set)))
 
-(defun %ensure-proper-path (path)
-  (if (str:ends-with-p "/" path)
-      path
-      (concatenate 'string path "/")))
-
 (defun %collect-packages (path current-package package-accu)
   "Recursively scans path for subdirectories and returns a list of packages.
 `PATH' is the path to scan.
@@ -54,7 +65,7 @@ Specify `:source' for 'main' and `:test' for 'test'."
 Returns a list of packages."
   (let ((files (%filter-for-file-spec
                 (uiop:directory-files path)
-                *file-spec*))
+                *search-file-spec*))
         (new-current-package)
         (package-name
           (first (last (pathname-directory path)))))
