@@ -17,11 +17,13 @@
 
 (test scan-packages-one--but-no-file
   "Scan packages in source root, there is one package, but no file in it."
-  (is (fset:equal? (fset:set) (scan-project "test-projects/proj1" :source))))
+  (is (fset:equal? (fset:set '(:package "foo"))
+                   (scan-project "test-projects/proj1" :source))))
 
 (test scan-packages-one--one-scala-file
   "Scan packages in source root, there is one package wit a scala file."
-  (is (fset:equal? (fset:set '(:package "foo")) (scan-project "test-projects/proj2" :source))))
+  (is (fset:equal? (fset:set '(:package "foo"))
+                   (scan-project "test-projects/proj2" :source))))
 
 (test scan-packages-two-levels
   "Scan packages in source root, there are two levels of packages."
@@ -48,3 +50,20 @@
                  '(:package "foo2.buzz")
                  '(:package "foo2"))
        (scan-project "test-projects/proj5" :source))))
+
+(test scan-packages-three-levels
+  "Scan packages in source root, there are three levels of packages."
+  (is (fset:equal?
+       (fset:set '(:package "foo.bar.buzz")
+                 '(:package "foo.bar")
+                 '(:package "foo.buzz")
+                 '(:package "foo")
+                 '(:package "foo2.bar")
+                 '(:package "foo2.buzz")
+                 '(:package "foo2")
+                 )
+       (scan-project "test-projects/proj6" :source))))
+
+;; TODO: there are some issues when running against real project.
+;; 'mid' is duplicated and package strucrture is missing.
+;; So all packages must be looked at, not only the ones that contain scala files.

@@ -2,10 +2,13 @@
   (:use :cl)
   (:nicknames :spak)
   (:export #:scan-project
-           #:scan-packages)
+           #:scan-packages
+           #:*file-spec*)
   )
 
 (in-package :graphy.scan-packages)
+
+(defvar *file-spec* '("*.scala"))
 
 (defun scan-project (path source-type)
   "`PATH' is the root path to a Java/Scala project whichg has a folder structure of
@@ -31,7 +34,7 @@ Specify `:source' for 'main' and `:test' for 'test'."
 
   ;;(format t "real-path: ~a~%" real-path)
   (fset:reduce (lambda (accu dir)
-                 (let ((paks (%scan-dir dir (fset:empty-set))))
+                 (let ((paks (%scan-dir dir "" (fset:empty-set))))
                    (if (fset:nonempty? paks)
                        (fset:union accu paks)
                        accu)))
@@ -43,40 +46,47 @@ Specify `:source' for 'main' and `:test' for 'test'."
       path
       (concatenate 'string path "/")))
 
-(defun %scan-dir (path package-accu)
-  "Recursively scans path for subdirectories and returns a list of packages."
+(defun %scan-dir (path current-package package-accu)
+  "Recursively scans path for subdirectories and returns a list of packages.
+`PATH' is the path to scan.
+`CURRENT-PACKAGE' is the current package name, or position in the folder tree.
+`PACKAGE-ACCU' is the accumulator for the packages found so far.
+Returns a list of packages."
   (let ((files (%filter-for-file-extension
                 (uiop:directory-files path)
-                ".scala")))
-    ;;(format t "scanned files in ~a: ~%~a" path files)
-    (when (car files)
-      (let* ((package-name
-               (first (last (pathname-directory path))))
-             (prev-package
-               (fset:reduce (lambda (accu pak)
-                              (%conc-package-name accu (second pak)))
-                            package-accu
-                            :initial-value ""))
-             (new-package (%conc-package-name prev-package package-name)))
-        (setf package-accu
-              (fset:with package-accu `(:package ,new-package))))))
-  (format t "package-accu ~a~%" package-accu)
+                *file-spec*))
+        (new-current-package)
+        (package-name
+          (first (last (pathname-directory path)))))
+    (declare (ignore files))      ; ignore for now. maybe needed later
 
-  (let ((subdirs (uiop:subdirectories path)))
-    (if subdirs
-        (fset:reduce (lambda (accu dir)
-                       (let ((paks (%scan-dir dir package-accu)))
-                         (if (fset:nonempty? paks)
-                             (fset:union accu paks)
-                             accu)))
-                     subdirs
-                     :initial-value (fset:empty-set))
-        package-accu)))
+    ;; extract package name
+    (setf new-current-package
+          (%conc-package-name current-package package-name)
+          package-accu
+          (fset:with package-accu `(:package ,new-current-package)))
 
-(defun %filter-for-file-extension (files extension)
+    (format t "package-accu ~a~%" package-accu)
+
+    (flet ((descent-to-subfolders ()
+             (let ((subdirs (uiop:subdirectories path)))
+               (if subdirs
+                   (fset:reduce (lambda (accu dir)
+                                  (let ((paks (%scan-dir dir new-current-package package-accu)))
+                                    (if (fset:nonempty? paks)
+                                        (fset:union accu paks)
+                                        accu)))
+                                subdirs
+                                :initial-value (fset:empty-set))
+                   package-accu))))
+      (descent-to-subfolders))))
+
+(defun %filter-for-file-extension (files file-spec)
   (remove-if-not (lambda (file)
                    (let ((filename (file-namestring file)))
-                     (str:ends-with-p extension filename)))
+                     (some (lambda (extension)
+                             (str:ends-with-p extension filename))
+                           file-spec)))
                  files))
 
 (defun %conc-package-name (prev new)
