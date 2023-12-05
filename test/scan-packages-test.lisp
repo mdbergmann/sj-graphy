@@ -88,5 +88,4 @@ The result should be a list of packages with the dependencies of the two files m
                     :pak-imports '("foo.bar"
                                    "foo2.bar"
                                    "foo3.bar")))
-       (scan-project "test-projects/dep0" :collect-pak-deps t)))
-  )
+       (scan-project "test-projects/dep0" :collect-pak-deps t))))

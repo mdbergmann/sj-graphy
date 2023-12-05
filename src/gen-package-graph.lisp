@@ -26,17 +26,13 @@ is used to keep track of the current cluster object.")
   (if cluster
       (cl-dot:generate-graph-from-roots
        'packages
-       (let ((result nil))
-         (loop :for cluster :in packages
-               :for name = (getf cluster :name nil)
-               :for color = (getf cluster :color nil)
-               :for packages = (getf cluster :packages nil)
-               :do (progn
-                     (setf result
-                           (append result
-                                   (list (make-cluster :name name :color color))
-                                   packages))))
-         result))
+       (reduce (lambda (accu cluster)
+                 (append accu
+                         (list (make-cluster :name (getf cluster :name nil)
+                                             :color (getf cluster :color nil)))
+                         (getf cluster :packages nil)))
+               packages
+               :initial-value nil))
       (cl-dot:generate-graph-from-roots 'packages packages)))
 
 (defmethod graph-object-node ((graph (eql 'packages)) (object cluster))
