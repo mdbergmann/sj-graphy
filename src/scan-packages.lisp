@@ -28,12 +28,16 @@
   (name nil :type (or null string))
   (pak-imports nil :type list))
 
-(defun scan-project (path &key (source-type :source)
+(defun scan-project (path &key
+                            (source-type :source)
                             (collect-pak-deps nil))
   "`PATH' is the root path to a Java/Scala project whichg has a folder structure of
 'src/main/scala' or 'src/test/scala' beneath.
 Where `SOURCE-TYPE' defines the 'main or 'test' part.
-Specify `:source' for 'main' and `:test' for 'test'."
+Specify `:source' for 'main' and `:test' for 'test'.
+`COLLECT-PAK-DEPS' is a boolean value that indicates whether the dependencies of the packages
+should be collected as well. In the `PAK' structure, the field `PAK-IMPORTS' contains those as part of the result.
+Those are just package dependencies, not class dependencies."
   (check-type path string)
   
   (setf path (%ensure-no-trailing-slash path))
@@ -118,14 +122,16 @@ Returns a list of packages."
       (descent-to-subfolders))))
 
 (defun %collect-package-deps (files)
-  (fset:reduce
-   (lambda (accu file)
-     (let ((deps (%collect-file-package-deps file)))
-       (if (fset:nonempty? deps)
-           (fset:union accu deps)
-           accu)))
-   files
-   :initial-value (fset:empty-set)))
+  (fset:convert
+   'list
+   (fset:reduce
+    (lambda (accu file)
+      (let ((deps (%collect-file-package-deps file)))
+        (if (fset:nonempty? deps)
+            (fset:union accu deps)
+            accu)))
+    files
+    :initial-value (fset:empty-set))))
 
 (defun %collect-file-package-deps (file)
   (let ((deps (fset:empty-set)))

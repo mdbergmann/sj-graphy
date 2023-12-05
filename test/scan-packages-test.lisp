@@ -80,11 +80,13 @@
           (scan-project "test-projects/proj6"))))
 
 (test scan-packages--with-file-dependencies
-  "Scans packages and also collects the package dependencies of each file/class."
+  "Scans packages and also collects the package dependencies of each file/class.
+There are two source files with identical package dependencies.
+The result should be a list of packages with the dependencies of the two files merged."
   (is (equalp
        `(,(make-pak :name "foo"
-                    :pak-imports (fset:set "foo.bar"
-                                           "foo2.bar"
-                                           "foo3.bar")))
+                    :pak-imports '("foo.bar"
+                                   "foo2.bar"
+                                   "foo3.bar")))
        (scan-project "test-projects/dep0" :collect-pak-deps t)))
   )
