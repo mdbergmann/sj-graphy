@@ -5,11 +5,14 @@
   :depends-on ("alexandria"
                "binding-arrows"
                "str"
-               "fset")
+               "fset"
+               "cl-dot"
+               "cl-ppcre)
   :components ((:module "src"
                 :components
                 (
                  (:file "scan-packages")
+                 (:file "gen-package-graph")
                )))
   :in-order-to ((test-op (test-op "graphy/tests"))))
 
@@ -22,6 +25,7 @@
                 :components
                 ((:file "all-test")
                  (:file "scan-packages-test")
+                 (:file "gen-package-graph-test")
                  )))
   :description "Test system for graphy"
   :perform (test-op (op c) (symbol-call :fiveam :run!

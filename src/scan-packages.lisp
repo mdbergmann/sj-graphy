@@ -21,10 +21,15 @@
 (defparameter *search-file-spec* '(".scala")
   "A list of file extensions to search for. E.g. '*.scala' or '*.java'.")
 
-(defstruct pak
-  (name nil :type (or null string)))
+(defvar *collect-package-deps* nil
+  "If true, the dependencies of the packages are collected as well.")
 
-(defun scan-project (path &optional (source-type :source))
+(defstruct pak
+  (name nil :type (or null string))
+  (pak-imports nil :type list))
+
+(defun scan-project (path &key (source-type :source)
+                            (collect-pak-deps nil))
   "`PATH' is the root path to a Java/Scala project whichg has a folder structure of
 'src/main/scala' or 'src/test/scala' beneath.
 Where `SOURCE-TYPE' defines the 'main or 'test' part.
@@ -46,7 +51,8 @@ Specify `:source' for 'main' and `:test' for 'test'."
                            *source-file-type*))))
     (format t "real-path: ~a~%" real-path)
     (assert (probe-file real-path) nil "Path ~a does not exist." real-path)
-    (scan-packages real-path)))
+    (let ((*collect-package-deps* collect-pak-deps))
+      (scan-packages real-path))))
 
 (defun %ensure-no-trailing-slash (path)
   (if (str:ends-with-p "/" path)
@@ -62,13 +68,14 @@ Specify `:source' for 'main' and `:test' for 'test'."
 
   ;;(format t "real-path: ~a~%" real-path)
   (fset:convert 'list
-                (fset:reduce (lambda (accu dir)
-                               (let ((paks (%scan-packages dir "" (fset:empty-set))))
-                                 (if (fset:nonempty? paks)
-                                     (fset:union accu paks)
-                                     accu)))
-                             (uiop:subdirectories path)
-                             :initial-value (fset:empty-set))))
+                (fset:reduce
+                 (lambda (accu dir)
+                   (let ((paks (%scan-packages dir "" (fset:empty-set))))
+                     (if (fset:nonempty? paks)
+                         (fset:union accu paks)
+                         accu)))
+                 (uiop:subdirectories path)
+                 :initial-value (fset:empty-set))))
 
 (defun %scan-packages (path current-package package-accu)
   "Recursively scans path for subdirectories and returns a list of packages.
@@ -81,16 +88,20 @@ Returns a list of packages."
                 *search-file-spec*))
         (new-current-package)
         (package-name
-          (first (last (pathname-directory path)))))
-    (declare (ignore files))      ; ignore for now. maybe needed later
+          (first (last (pathname-directory path))))
+        (file-pak-deps nil))
 
-    ;; extract package name
+    (when *collect-package-deps*
+      (setf file-pak-deps (%collect-package-deps files)))
+      
+      ;; extract package name
     (setf new-current-package
           (%conc-package-name current-package package-name)
           package-accu
-          (fset:with package-accu (make-pak :name new-current-package)))
+          (fset:with package-accu (make-pak :name new-current-package
+                                            :pak-imports file-pak-deps)))
 
-    (format t "package-accu ~a~%" package-accu)
+    ;;(format t "package-accu ~a~%" package-accu)
 
     (flet ((descent-to-subfolders ()
              (let ((subdirs (uiop:subdirectories path)))
@@ -105,6 +116,31 @@ Returns a list of packages."
                                 :initial-value (fset:empty-set))
                    package-accu))))
       (descent-to-subfolders))))
+
+(defun %collect-package-deps (files)
+  (fset:reduce
+   (lambda (accu file)
+     (let ((deps (%collect-file-package-deps file)))
+       (if (fset:nonempty? deps)
+           (fset:union accu deps)
+           accu)))
+   files
+   :initial-value (fset:empty-set)))
+
+(defun %collect-file-package-deps (file)
+  (let ((deps (fset:empty-set)))
+    (with-open-file (in file)
+      (loop :for line = (str:trim (read-line in nil nil))
+            :while line
+            :if (str:starts-with-p "import" line)
+              :do
+                 (multiple-value-bind (match res)
+                     (ppcre:scan-to-strings
+                      "(?-i)^import\\s+([a-z0-9\\.]*)($|\\.[A-Z\\{].*$)"
+                      line)
+                   (when (and match (not (null res)))
+                     (setf deps (fset:with deps (elt res 0)))))))
+    deps))
 
 (defun %filter-for-file-spec (files file-spec)
   (remove-if-not (lambda (file)
