@@ -5,7 +5,12 @@
            #:scan-packages
            #:*file-spec*
            #:*default-source-root*
-           #:*source-file-type*)
+           #:*source-file-type*
+           ;; the type for package
+           #:pak
+           #:make-pak
+           #:pak-name
+           #:pak-module)
   )
 
 (in-package :graphy.scan-packages)
@@ -16,7 +21,10 @@
 (defparameter *search-file-spec* '(".scala")
   "A list of file extensions to search for. E.g. '*.scala' or '*.java'.")
 
-(defun scan-project (path source-type)
+(defstruct pak
+  (name nil :type (or null string)))
+
+(defun scan-project (path &optional (source-type :source))
   "`PATH' is the root path to a Java/Scala project whichg has a folder structure of
 'src/main/scala' or 'src/test/scala' beneath.
 Where `SOURCE-TYPE' defines the 'main or 'test' part.
@@ -53,15 +61,16 @@ Specify `:source' for 'main' and `:test' for 'test'."
   (assert (probe-file path) nil "Path ~a does not exist." path)
 
   ;;(format t "real-path: ~a~%" real-path)
-  (fset:reduce (lambda (accu dir)
-                 (let ((paks (%collect-packages dir "" (fset:empty-set))))
-                   (if (fset:nonempty? paks)
-                       (fset:union accu paks)
-                       accu)))
-               (uiop:subdirectories path)
-               :initial-value (fset:empty-set)))
+  (fset:convert 'list
+                (fset:reduce (lambda (accu dir)
+                               (let ((paks (%scan-packages dir "" (fset:empty-set))))
+                                 (if (fset:nonempty? paks)
+                                     (fset:union accu paks)
+                                     accu)))
+                             (uiop:subdirectories path)
+                             :initial-value (fset:empty-set))))
 
-(defun %collect-packages (path current-package package-accu)
+(defun %scan-packages (path current-package package-accu)
   "Recursively scans path for subdirectories and returns a list of packages.
 `PATH' is the path to scan.
 `CURRENT-PACKAGE' is the current package name, or position in the folder tree.
@@ -79,7 +88,7 @@ Returns a list of packages."
     (setf new-current-package
           (%conc-package-name current-package package-name)
           package-accu
-          (fset:with package-accu `(:package ,new-current-package)))
+          (fset:with package-accu (make-pak :name new-current-package)))
 
     (format t "package-accu ~a~%" package-accu)
 
@@ -87,7 +96,8 @@ Returns a list of packages."
              (let ((subdirs (uiop:subdirectories path)))
                (if subdirs
                    (fset:reduce (lambda (accu dir)
-                                  (let ((paks (%collect-packages dir new-current-package package-accu)))
+                                  (let ((paks (%scan-packages
+                                               dir new-current-package package-accu)))
                                     (if (fset:nonempty? paks)
                                         (fset:union accu paks)
                                         accu)))
