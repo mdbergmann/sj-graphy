@@ -44,7 +44,8 @@ Where `SOURCE-TYPE' defines the 'main or 'test' part.
 Specify `:source' for 'main' and `:test' for 'test'.
 `COLLECT-PAK-DEPS' is a boolean value that indicates whether the dependencies of the packages
 should be collected as well. In the `PAK' structure, the field `DEPENDS-ON-PKGS' contains those as part of the result.
-Those are just package dependencies, not class dependencies."
+Those are just package dependencies, not class dependencies.
+`EXCLUDE' or `INCLUDE' are regexes that can be used to filter the packages."
   (check-type path string)
   
   (setf path (%ensure-no-trailing-slash path))

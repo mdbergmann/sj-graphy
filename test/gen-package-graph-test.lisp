@@ -29,6 +29,14 @@
     (is (= (length (cl-dot:edges-of graph)) 1))
     (cl-dot:dot-graph graph "flat-packages-with-dependencies.png" :format :png)))
 
+(test gen-package-graph--flat-packages-replace-pkg-names
+  (let* ((packages `(,(spak:make-pak :name "foo.bar.baz")))
+         (graph (make-graph packages :replace-pkg-names '(("foo.bar." . "")))))
+    (is (= (length (cl-dot:nodes-of graph)) 1))
+    (is (equal (getf (cl-dot:attributes-of (car (cl-dot:nodes-of graph)))
+                     :label)
+               "baz"))))
+
 (test gen-package-graph--clustered
   (let* ((packages `((:name "fooc"
                       :color :green
