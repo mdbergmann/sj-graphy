@@ -85,7 +85,24 @@ There are two source files with identical package dependencies.
 The result should be a list of packages with the dependencies of the two files merged."
   (is (equalp
        `(,(make-pak :name "foo"
-                    :depends-on-pkg '("foo.bar"
-                                      "foo2.bar"
-                                      "foo3.bar")))
+                    :depends-on-pkgs '("foo.bar"
+                                       "foo2.bar"
+                                       "foo3.bar")))
        (scan-project "test-projects/dep0" :collect-pak-deps t))))
+
+(test scan-packages-with-exclude-filter
+  "Scan package with taking an exclude filter into account."
+  (is-true
+   (every (lambda (x)
+            (member x 
+                    `(,(make-pak :name "foo2.bar")
+                      ,(make-pak :name "foo2.buzz"))
+                    :test #'equalp))
+          (inspectx
+           (scan-project "test-projects/proj6"
+                         :exclude '("^foo2$" "foo"))))))
+
+(defun inspectx (x)
+  (print x)
+  (terpri)
+  x)

@@ -22,7 +22,7 @@
 (test gen-package-graph--flat-packages-with-dependencies
   (let* ((packages `(,(spak:make-pak :name "bar")
                      ,(spak:make-pak :name "foo"
-                                     :depends-on-pkg '("bar"))))
+                                     :depends-on-pkgs '("bar"))))
          (graph (make-graph packages)))
     (is-true graph)
     (is (= (length (cl-dot:nodes-of graph)) 2))
@@ -49,7 +49,7 @@
                      (:name "barc"
                       :color :red
                       :packages (,(spak:make-pak :name "foo"
-                                                 :depends-on-pkg '("bar"))))))
+                                                 :depends-on-pkgs '("bar"))))))
          (graph (make-graph packages :cluster t)))
     (is-true graph)
     (is (= (length (cl-dot:nodes-of graph)) 2))

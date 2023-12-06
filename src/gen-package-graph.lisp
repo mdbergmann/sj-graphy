@@ -5,7 +5,7 @@
                 #:pak
                 #:make-pak
                 #:pak-name
-                #:pak-depends-on-pkg)
+                #:pak-depends-on-pkgs)
   (:shadowing-import-from #:cl-dot
                           #:graph-object-node
                           #:graph-object-cluster
@@ -58,7 +58,7 @@ is used to keep track of the current cluster object.")
 
 (defmethod graph-object-points-to ((graph (eql 'packages)) (object pak))
   (format t "points-to ~a~%" object)
-  (let* ((pak-deps (pak-depends-on-pkg object))
+  (let* ((pak-deps (pak-depends-on-pkgs object))
          (dependents
            (loop :for pkg :in pak-deps
                  :for dependents = (loop :for pak :in *all-packages*

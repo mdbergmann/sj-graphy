@@ -3,14 +3,14 @@
   (:nicknames :spak)
   (:export #:scan-project
            #:scan-packages
-           #:*file-spec*
+           #:*source-file-spec*
            #:*default-source-root*
            #:*source-file-type*
            ;; the type for package
            #:pak
            #:make-pak
            #:pak-name
-           #:pak-depends-on-pkg)
+           #:pak-depends-on-pkgs)
   )
 
 (in-package :graphy.scan-packages)
@@ -18,25 +18,29 @@
 (defvar *default-source-root* "src")
 (defvar *source-file-type* "scala"
   "Part of the source root. E.g. 'scala' or 'java'.")
-(defparameter *search-file-spec* '(".scala")
+(defvar *search-file-spec* '(".scala")
   "A list of file extensions to search for. E.g. '*.scala' or '*.java'.")
 
 (defvar *collect-package-deps* nil
   "If true, the dependencies of the packages are collected as well.")
 
+(defvar *exclude-filter* nil
+  "A list of regexes to exclude from the search.")
+
 (defstruct pak
   (name nil :type (or null string))
-  (depends-on-pkg nil :type list))
+  (depends-on-pkgs nil :type list))
 
 (defun scan-project (path &key
                             (source-type :source)
-                            (collect-pak-deps nil))
+                            (collect-pak-deps nil)
+                            (exclude nil))
   "`PATH' is the root path to a Java/Scala project whichg has a folder structure of
 'src/main/scala' or 'src/test/scala' beneath.
 Where `SOURCE-TYPE' defines the 'main or 'test' part.
 Specify `:source' for 'main' and `:test' for 'test'.
 `COLLECT-PAK-DEPS' is a boolean value that indicates whether the dependencies of the packages
-should be collected as well. In the `PAK' structure, the field `DEPENDS-ON-PKG' contains those as part of the result.
+should be collected as well. In the `PAK' structure, the field `DEPENDS-ON-PKGS' contains those as part of the result.
 Those are just package dependencies, not class dependencies."
   (check-type path string)
   
@@ -55,7 +59,8 @@ Those are just package dependencies, not class dependencies."
                            *source-file-type*))))
     (format t "real-path: ~a~%" real-path)
     (assert (probe-file real-path) nil "Path ~a does not exist." real-path)
-    (let ((*collect-package-deps* collect-pak-deps))
+    (let ((*collect-package-deps* collect-pak-deps)
+          (*exclude-filter* exclude))
       (scan-packages real-path))))
 
 (defun %ensure-no-trailing-slash (path)
@@ -100,10 +105,11 @@ Returns a list of packages."
       
       ;; extract package name
     (setf new-current-package
-          (%conc-package-name current-package package-name)
-          package-accu
-          (fset:with package-accu (make-pak :name new-current-package
-                                            :depends-on-pkg file-pak-deps)))
+          (%conc-package-name current-package package-name))
+    (setf package-accu
+          (%with-applied-exclude-filter new-current-package
+            (fset:with package-accu (make-pak :name new-current-package
+                                              :depends-on-pkgs file-pak-deps))))
 
     ;;(format t "package-accu ~a~%" package-accu)
 
@@ -161,3 +167,10 @@ Returns a list of packages."
                prev
                (if (string= "" prev) "" ".")
                new))
+
+(defmacro %with-applied-exclude-filter (package-name &body body)
+  `(when (and ,*exclude-filter*
+              (notany (lambda (filter)
+                        (ppcre:scan filter ,package-name))
+                      ,*exclude-filter*))
+    ,@body))
