@@ -31,64 +31,78 @@
 
 (test scan-packages-two-levels
   "Scan packages in source root, there are two levels of packages."
-  (is-true
-   (every (lambda (x)
-            (member x 
-                    `(,(make-pak :name "foo")
-                      ,(make-pak :name "foo.bar"))
-                    :test #'equalp))
-          (scan-project "test-projects/proj3"))))
+  (let ((scanned (scan-project "test-projects/proj3")))
+    (inspectx scanned)
+    (is (= 2 (length scanned)))
+    (is-true (every (lambda (x)
+                      (member x 
+                              `(,(make-pak :name "foo")
+                                ,(make-pak :name "foo.bar"))
+                              :test #'equalp))
+                    scanned))))
 
 (test scan-packages-two-levels--two-on-second-level
   "Scan packages in source root, there are two levels of packages, and two packages on the second level."
-  (is-true
-   (every (lambda (x)
-            (member x 
-                    `(,(make-pak :name "foo.bar")
-                      ,(make-pak :name "foo")
-                      ,(make-pak :name "foo.buzz"))
-                    :test #'equalp))
-          (scan-project "test-projects/proj4"))))
+  (let ((scanned (scan-project "test-projects/proj4")))
+    (inspectx scanned)
+    (is (= 3 (length scanned)))
+    (is-true (every (lambda (x)
+                      (member x 
+                              `(,(make-pak :name "foo.bar")
+                                ,(make-pak :name "foo")
+                                ,(make-pak :name "foo.buzz"))
+                              :test #'equalp))
+                    scanned))))
 
 (test scan-packages-two-levels--two-on-each-second-level
   "Scan packages in source root, there are three levels of packages."
-  (is-true
-   (every (lambda (x)
-            (member x 
-                    `(,(make-pak :name "foo.buzz")
-                      ,(make-pak :name "foo")
-                      ,(make-pak :name "foo.bar")
-                      ,(make-pak :name "foo2.bar")
-                      ,(make-pak :name "foo2")
-                      ,(make-pak :name "foo2.buzz"))
-                    :test #'equalp))
-          (scan-project "test-projects/proj5"))))
+  (let ((scanned (scan-project "test-projects/proj5")))
+    (inspectx scanned)
+    (is (= 6 (length scanned)))
+    (is-true (every (lambda (x)
+                      (member x 
+                              `(,(make-pak :name "foo.bar")
+                                ,(make-pak :name "foo")
+                                ,(make-pak :name "foo.buzz")
+                                ,(make-pak :name "foo2.bar")
+                                ,(make-pak :name "foo2")
+                                ,(make-pak :name "foo2.buzz"))
+                              :test #'equalp))
+                    scanned))))
 
 (test scan-packages-three-levels
   "Scan packages in source root, there are three levels of packages."
-  (is-true
-   (every (lambda (x)
-            (member x 
-                    `(,(make-pak :name "foo.buzz")
-                      ,(make-pak :name "foo")
-                      ,(make-pak :name "foo.bar.buzz")
-                      ,(make-pak :name "foo.bar")
-                      ,(make-pak :name "foo2.bar")
-                      ,(make-pak :name "foo2")
-                      ,(make-pak :name "foo2.buzz"))
-                    :test #'equalp))
-          (scan-project "test-projects/proj6"))))
+  (let ((scanned (scan-project "test-projects/proj6")))
+    (inspectx scanned)
+    (is (= 7 (length scanned)))
+    (is-true (every (lambda (x)
+                      (member x 
+                              `(,(make-pak :name "foo.bar")
+                                ,(make-pak :name "foo")
+                                ,(make-pak :name "foo.buzz")
+                                ,(make-pak :name "foo.bar.buzz")
+                                ,(make-pak :name "foo2.bar")
+                                ,(make-pak :name "foo2")
+                                ,(make-pak :name "foo2.buzz"))
+                              :test #'equalp))
+                    scanned))))
 
 (test scan-packages--with-file-dependencies
   "Scans packages and also collects the package dependencies of each file/class.
 There are two source files with identical package dependencies.
 The result should be a list of packages with the dependencies of the two files merged."
-  (is (equalp
-       `(,(make-pak :name "foo"
-                    :depends-on-pkgs '("foo.bar"
-                                       "foo2.bar"
-                                       "foo3.bar")))
-       (scan-project "test-projects/dep0" :collect-pak-deps t))))
+  (let ((scanned (scan-project "test-projects/dep0" :collect-pak-deps t)))
+    (inspectx scanned)
+    (is (= 1 (length scanned)))
+    (is-true (every
+              (lambda (x)
+                (member x 
+                        `(,(make-pak :name "foo"
+                                     :depends-on-pkgs '("foo.bar"
+                                                        "foo2.bar"
+                                                        "foo3.bar")))
+                        :test #'equalp))
+                    scanned))))
 
 (test scan-packages-with-exclude-filter
   "Scan package with taking an exclude filter into account."

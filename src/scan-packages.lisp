@@ -113,8 +113,8 @@ Returns a list of packages."
                            (make-pak :name
                                      new-current-package
                                      :depends-on-pkgs
-                                     (when *collect-package-deps*
-                                       (%collect-package-deps files)))))
+                                     (and *collect-package-deps*
+                                          (%collect-package-deps files)))))
               package-accu))
 
     ;;(format t "package-accu ~a~%" package-accu)
@@ -175,10 +175,20 @@ Returns a list of packages."
                new))
 
 (defmacro %with-applied-filters (package-name &body body)
-  `(when (and (some (lambda (filter)
-                      (ppcre:scan filter ,package-name))
-                    *include-filter*)
-              (notany (lambda (filter)
-                        (ppcre:scan filter ,package-name))
-                      *exclude-filter*))
+  `(when (and (%include-p ,package-name)
+              (not (%exclude-p ,package-name)))
      ,@body))
+
+(defun %include-p (package-name)
+  (if *include-filter*
+      (some (lambda (filter)
+                   (ppcre:scan filter package-name))
+                 *include-filter*)
+      t))
+
+(defun %exclude-p (package-name)
+  (if *exclude-filter*
+      (some (lambda (filter)
+              (ppcre:scan filter package-name))
+            *exclude-filter*)
+      nil))
