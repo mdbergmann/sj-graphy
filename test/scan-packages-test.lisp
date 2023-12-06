@@ -24,6 +24,10 @@
   (is (equalp `(,(make-pak :name "foo"))
               (scan-project "test-projects/proj1"))))
 
+(test scan-packages-one--but-no-file--exclude-empty-packages
+  (is (equalp '()
+              (scan-project "test-projects/proj1" :exclude-empty-pkgs t))))
+
 (test scan-packages-one--one-scala-file
   "Scan packages in source root, there is one package wit a scala file."
   (is (equalp `(,(make-pak :name "foo"))

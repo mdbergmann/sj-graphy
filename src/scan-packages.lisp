@@ -6,6 +6,10 @@
            #:*source-file-spec*
            #:*default-source-root*
            #:*source-file-type*
+           #:*collect-package-deps*
+           #:*exclude-empty-pkgs*
+           #:*exclude-filter*
+           #:*include-filter*
            ;; the type for package
            #:pak
            #:make-pak
@@ -20,10 +24,10 @@
   "Part of the source root. E.g. 'scala' or 'java'.")
 (defvar *search-file-spec* '(".scala")
   "A list of file extensions to search for. E.g. '*.scala' or '*.java'.")
-
 (defvar *collect-package-deps* nil
   "If true, the dependencies of the packages are collected as well.")
-
+(defvar *exclude-empty-pkgs* nil
+  "If true, empty packages are excluded from the result.")
 (defvar *exclude-filter* nil
   "A list of regexes to exclude from the search.")
 (defvar *include-filter* nil
@@ -36,6 +40,7 @@
 (defun scan-project (path &key
                             (source-type :source)
                             (collect-pak-deps nil)
+                            (exclude-empty-pkgs nil)
                             (exclude nil)
                             (include nil))
   "`PATH' is the root path to a Java/Scala project whichg has a folder structure of
@@ -64,6 +69,7 @@ Those are just package dependencies, not class dependencies.
     (format t "real-path: ~a~%" real-path)
     (assert (probe-file real-path) nil "Path ~a does not exist." real-path)
     (let ((*collect-package-deps* collect-pak-deps)
+          (*exclude-empty-pkgs* exclude-empty-pkgs)
           (*exclude-filter* exclude)
           (*include-filter* include))
       (scan-packages real-path))))
@@ -110,15 +116,17 @@ Returns a list of packages."
     (setf new-current-package
           (%conc-package-name current-package package-name))
     ;; generate new accu
-    (setf package-accu
-          (or (%with-applied-filters new-current-package
-                (fset:with package-accu
-                           (make-pak :name
-                                     new-current-package
-                                     :depends-on-pkgs
-                                     (and *collect-package-deps*
-                                          (%collect-package-deps files)))))
-              package-accu))
+    (if (and *exclude-empty-pkgs* (null (car files)))
+        package-accu
+        (setf package-accu
+              (or (%with-applied-filters new-current-package
+                    (fset:with package-accu
+                               (make-pak :name
+                                         new-current-package
+                                         :depends-on-pkgs
+                                         (and *collect-package-deps*
+                                              (%collect-package-deps files)))))
+                  package-accu)))
 
     ;;(format t "package-accu ~a~%" package-accu)
 
