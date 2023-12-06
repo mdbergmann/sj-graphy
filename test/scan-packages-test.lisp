@@ -92,17 +92,45 @@ The result should be a list of packages with the dependencies of the two files m
 
 (test scan-packages-with-exclude-filter
   "Scan package with taking an exclude filter into account."
-  (is-true
-   (every (lambda (x)
-            (member x 
-                    `(,(make-pak :name "foo2.bar")
-                      ,(make-pak :name "foo2.buzz"))
-                    :test #'equalp))
-          (inspectx
-           (scan-project "test-projects/proj6"
-                         :exclude '("^foo2$" "foo"))))))
+  (let ((scanned (scan-project "test-projects/proj6"
+                               :exclude '("^foo2$" "foo\\."))))
+    (inspectx scanned)
+    (is (= 3 (length scanned)))
+    (is-true (every (lambda (x)
+                      (member x 
+                              `(,(make-pak :name "foo")
+                                ,(make-pak :name "foo2.bar")
+                                ,(make-pak :name "foo2.buzz"))
+                              :test #'equalp))
+                    scanned))))
+
+(test scan-packages-with-include-filter
+  "Scan package with taking an include filter into account."
+  (let ((scanned (scan-project "test-projects/proj6"
+                               :include '("foo2.+"))))
+    (inspectx scanned)
+    (is (= 2 (length scanned)))
+    (is-true (every (lambda (x)
+                      (member x 
+                              `(,(make-pak :name "foo2.bar")
+                                ,(make-pak :name "foo2.buzz"))
+                              :test #'equalp))
+                    scanned))))
+
+(test scan-packages-with-include-and-exclude-filter
+  (let ((scanned (scan-project "test-projects/proj6"
+                               :include '("foo2.+")
+                               :exclude '("foo2.buzz"))))
+    (inspectx scanned)
+    (is (= 1 (length scanned)))
+    (is-true (every (lambda (x)
+                      (member x 
+                              `(,(make-pak :name "foo2.bar"))
+                              :test #'equalp))
+                    scanned))))
 
 (defun inspectx (x)
+  "Just prints `X' and returns it."
   (print x)
   (terpri)
   x)

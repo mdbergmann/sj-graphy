@@ -26,6 +26,8 @@
 
 (defvar *exclude-filter* nil
   "A list of regexes to exclude from the search.")
+(defvar *include-filter* nil
+  "A list of regexes to include in the search.")
 
 (defstruct pak
   (name nil :type (or null string))
@@ -34,7 +36,8 @@
 (defun scan-project (path &key
                             (source-type :source)
                             (collect-pak-deps nil)
-                            (exclude nil))
+                            (exclude nil)
+                            (include nil))
   "`PATH' is the root path to a Java/Scala project whichg has a folder structure of
 'src/main/scala' or 'src/test/scala' beneath.
 Where `SOURCE-TYPE' defines the 'main or 'test' part.
@@ -60,7 +63,8 @@ Those are just package dependencies, not class dependencies."
     (format t "real-path: ~a~%" real-path)
     (assert (probe-file real-path) nil "Path ~a does not exist." real-path)
     (let ((*collect-package-deps* collect-pak-deps)
-          (*exclude-filter* exclude))
+          (*exclude-filter* exclude)
+          (*include-filter* include))
       (scan-packages real-path))))
 
 (defun %ensure-no-trailing-slash (path)
@@ -97,19 +101,21 @@ Returns a list of packages."
                 *search-file-spec*))
         (new-current-package)
         (package-name
-          (first (last (pathname-directory path))))
-        (file-pak-deps nil))
-
-    (when *collect-package-deps*
-      (setf file-pak-deps (%collect-package-deps files)))
+          (first (last (pathname-directory path)))))
       
-      ;; extract package name
+    ;; extract package name
     (setf new-current-package
           (%conc-package-name current-package package-name))
+    ;; generate new accu
     (setf package-accu
-          (%with-applied-exclude-filter new-current-package
-            (fset:with package-accu (make-pak :name new-current-package
-                                              :depends-on-pkgs file-pak-deps))))
+          (or (%with-applied-filters new-current-package
+                (fset:with package-accu
+                           (make-pak :name
+                                     new-current-package
+                                     :depends-on-pkgs
+                                     (when *collect-package-deps*
+                                       (%collect-package-deps files)))))
+              package-accu))
 
     ;;(format t "package-accu ~a~%" package-accu)
 
@@ -168,9 +174,11 @@ Returns a list of packages."
                (if (string= "" prev) "" ".")
                new))
 
-(defmacro %with-applied-exclude-filter (package-name &body body)
-  `(when (and ,*exclude-filter*
+(defmacro %with-applied-filters (package-name &body body)
+  `(when (and (some (lambda (filter)
+                      (ppcre:scan filter ,package-name))
+                    *include-filter*)
               (notany (lambda (filter)
                         (ppcre:scan filter ,package-name))
-                      ,*exclude-filter*))
-    ,@body))
+                      *exclude-filter*))
+     ,@body))
