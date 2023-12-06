@@ -74,7 +74,9 @@ Those are just package dependencies, not class dependencies.
       path))
 
 (defun scan-packages (path)
-  "Scans for packages (which are folders that contains a source file) in the given path."
+  "Scans for packages (which are folders that contains a source file) in the given path.
+`SCAN-PACKAGES' can be called directly.
+But special vars (`*collect-package-deps*', `*exclude-filter*', `*include-filter*') must be set manually."
   (check-type path (or pathname string))
   (when (stringp path)
     (setf path (pathname path)))
@@ -155,7 +157,7 @@ Returns a list of packages."
               :do
                  (multiple-value-bind (match res)
                      (ppcre:scan-to-strings
-                      "(?-i)^import\\s+([a-z0-9\\.]*)($|\\.[A-Z\\{].*$)"
+                      "(?-i)^import\\s+([a-z0-9\\.]*)($|\\.[A-Z\\{_\\*].*$)"
                       line)
                    (when (and match (not (null res)))
                      (setf deps (fset:with deps (elt res 0)))))))

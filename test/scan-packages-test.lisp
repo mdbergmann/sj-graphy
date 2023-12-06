@@ -100,7 +100,9 @@ The result should be a list of packages with the dependencies of the two files m
                         `(,(make-pak :name "foo"
                                      :depends-on-pkgs '("foo.bar"
                                                         "foo2.bar"
-                                                        "foo3.bar")))
+                                                        "foo3.bar"
+                                                        "foo4.bar"
+                                                        "foo5.bar")))
                         :test #'equalp))
                     scanned))))
 
