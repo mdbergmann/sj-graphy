@@ -19,6 +19,16 @@
     (is (typep (car (cl-dot:nodes-of graph)) 'cl-dot:node))
     (cl-dot:dot-graph graph "flat-packages.png" :format :png)))
 
+(test gen-package-graph--flat-packages-with-dependencies
+  (let* ((packages `(,(spak:make-pak :name "bar")
+                     ,(spak:make-pak :name "foo"
+                                     :depends-on-pkg '("bar"))))
+         (graph (make-graph packages)))
+    (is-true graph)
+    (is (= (length (cl-dot:nodes-of graph)) 2))
+    (is (= (length (cl-dot:edges-of graph)) 1))
+    (cl-dot:dot-graph graph "flat-packages-with-dependencies.png" :format :png)))
+
 (test gen-package-graph--clustered
   (let* ((packages `((:name "fooc"
                       :color :green
@@ -31,6 +41,17 @@
     (is (= (length (cl-dot:nodes-of graph)) 2))
     (is (typep (car (cl-dot:nodes-of graph)) 'cl-dot:node))
     (cl-dot:dot-graph graph "clustered.png" :format :png)))
-  
 
-(run! 'gen-package-graph-tests)
+(test gen-package-graph--clustered-with-dependencies
+  (let* ((packages `((:name "fooc"
+                      :color :green
+                      :packages (,(spak:make-pak :name "bar")))
+                     (:name "barc"
+                      :color :red
+                      :packages (,(spak:make-pak :name "foo"
+                                                 :depends-on-pkg '("bar"))))))
+         (graph (make-graph packages :cluster t)))
+    (is-true graph)
+    (is (= (length (cl-dot:nodes-of graph)) 2))
+    (is (= (length (cl-dot:edges-of graph)) 1))
+    (cl-dot:dot-graph graph "clustered-with-dependencies.png" :format :png)))

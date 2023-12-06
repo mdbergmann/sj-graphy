@@ -85,7 +85,7 @@ There are two source files with identical package dependencies.
 The result should be a list of packages with the dependencies of the two files merged."
   (is (equalp
        `(,(make-pak :name "foo"
-                    :pak-imports '("foo.bar"
-                                   "foo2.bar"
-                                   "foo3.bar")))
+                    :depends-on-pkg '("foo.bar"
+                                      "foo2.bar"
+                                      "foo3.bar")))
        (scan-project "test-projects/dep0" :collect-pak-deps t))))

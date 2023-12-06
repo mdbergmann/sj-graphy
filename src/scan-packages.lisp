@@ -10,7 +10,7 @@
            #:pak
            #:make-pak
            #:pak-name
-           #:pak-module)
+           #:pak-depends-on-pkg)
   )
 
 (in-package :graphy.scan-packages)
@@ -26,7 +26,7 @@
 
 (defstruct pak
   (name nil :type (or null string))
-  (pak-imports nil :type list))
+  (depends-on-pkg nil :type list))
 
 (defun scan-project (path &key
                             (source-type :source)
@@ -36,7 +36,7 @@
 Where `SOURCE-TYPE' defines the 'main or 'test' part.
 Specify `:source' for 'main' and `:test' for 'test'.
 `COLLECT-PAK-DEPS' is a boolean value that indicates whether the dependencies of the packages
-should be collected as well. In the `PAK' structure, the field `PAK-IMPORTS' contains those as part of the result.
+should be collected as well. In the `PAK' structure, the field `DEPENDS-ON-PKG' contains those as part of the result.
 Those are just package dependencies, not class dependencies."
   (check-type path string)
   
@@ -103,7 +103,7 @@ Returns a list of packages."
           (%conc-package-name current-package package-name)
           package-accu
           (fset:with package-accu (make-pak :name new-current-package
-                                            :pak-imports file-pak-deps)))
+                                            :depends-on-pkg file-pak-deps)))
 
     ;;(format t "package-accu ~a~%" package-accu)
 

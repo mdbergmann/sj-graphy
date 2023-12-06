@@ -7,11 +7,10 @@
                "str"
                "fset"
                "cl-dot"
-               "cl-ppcre)
+               "cl-ppcre")
   :components ((:module "src"
                 :components
-                (
-                 (:file "scan-packages")
+                ((:file "scan-packages")
                  (:file "gen-package-graph")
                )))
   :in-order-to ((test-op (test-op "graphy/tests"))))
