@@ -1,13 +1,13 @@
-(defpackage :graphy.scan-packages-test
-            (:use :cl :fiveam :graphy.scan-packages)
+(defpackage :sj-graphy.scan-packages-test
+            (:use :cl :fiveam :sj-graphy.scan-packages)
             (:export #:run!
                      #:all-tests
                      #:nil))
-(in-package :graphy.scan-packages-test)
+(in-package :sj-graphy.scan-packages-test)
 
 (def-suite scan-packages-tests
            :description "Test for scanning packages"
-           :in graphy.tests:test-suite)
+           :in sj-graphy.tests:test-suite)
 
 (in-suite scan-packages-tests)
 

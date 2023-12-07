@@ -1,4 +1,4 @@
-(defpackage :graphy.gen-package-graph
+(defpackage :sj-graphy.gen-package-graph
   (:use :cl)
   (:nicknames :genpak)
   (:import-from #:spak
@@ -13,7 +13,7 @@
   (:export #:make-graph)
   )
 
-(in-package :graphy.gen-package-graph)
+(in-package :sj-graphy.gen-package-graph)
 
 (defstruct cluster name color)
 

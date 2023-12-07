@@ -1,7 +1,7 @@
-(defsystem "graphy"
+(defsystem "sj-graphy"
   :version "0.0.1"
   :author "Manfred Bergmann"
-  :description "Lisp tools for SQC"
+  :description "Graphviz dot file generator for Scala/Java projects"
   :depends-on ("alexandria"
                "binding-arrows"
                "str"
@@ -13,11 +13,11 @@
                 ((:file "scan-packages")
                  (:file "gen-package-graph")
                )))
-  :in-order-to ((test-op (test-op "graphy/tests"))))
+  :in-order-to ((test-op (test-op "sj-graphy/tests"))))
 
-(defsystem "graphy/tests"
+(defsystem "sj-graphy/tests"
   :author "Manfred Bergmann"
-  :depends-on ("graphy"
+  :depends-on ("sj-graphy"
                "fiveam"
                "cl-mock")
   :components ((:module "test"
@@ -29,7 +29,7 @@
   :description "Test system for graphy"
   :perform (test-op (op c) (symbol-call :fiveam :run!
                                         (uiop:find-symbol* '#:test-suite
-                                                           '#:graphy.tests))))
+                                                           '#:sj-graphy.tests))))
 
 
 #|

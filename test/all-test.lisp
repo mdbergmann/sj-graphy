@@ -1,11 +1,11 @@
-(defpackage :graphy.tests
+(defpackage :sj-graphy.tests
   (:use :cl :fiveam)
   (:export #:run!
            #:all-tests
            #:nil
            #:test-suite))
 
-(in-package :graphy.tests)
+(in-package :sj-graphy.tests)
 
 (def-suite test-suite
   :description "All catching test suite.")

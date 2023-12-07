@@ -1,4 +1,4 @@
-(defpackage :graphy.scan-packages
+(defpackage :sj-graphy.scan-packages
   (:use :cl)
   (:nicknames :spak)
   (:export #:scan-project
@@ -17,7 +17,7 @@
            #:pak-depends-on-pkgs)
   )
 
-(in-package :graphy.scan-packages)
+(in-package :sj-graphy.scan-packages)
 
 (defvar *default-source-root* "src")
 (defvar *source-file-type* "scala"

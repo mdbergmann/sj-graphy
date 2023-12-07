@@ -1,13 +1,13 @@
-(defpackage :graphy.gen-package-graph-test
-  (:use :cl :fiveam :graphy.gen-package-graph)
+(defpackage :sj-graphy.gen-package-graph-test
+  (:use :cl :fiveam :sj-graphy.gen-package-graph)
   (:export #:run!
            #:all-tests
            #:nil))
-(in-package :graphy.gen-package-graph-test)
+(in-package :sj-graphy.gen-package-graph-test)
 
 (def-suite gen-package-graph-tests
   :description "Tests for generating package graphs"
-  :in graphy.tests:test-suite)
+  :in sj-graphy.tests:test-suite)
 
 (in-suite gen-package-graph-tests)
 
