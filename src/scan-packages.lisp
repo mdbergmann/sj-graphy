@@ -116,9 +116,9 @@ Returns a list of packages."
     (setf new-current-package
           (%conc-package-name current-package package-name))
     ;; generate new accu
-    (if (and *exclude-empty-pkgs* (null (car files)))
-        package-accu
-        (setf package-accu
+    (setf package-accu
+          (if (and *exclude-empty-pkgs* (null (car files)))
+              package-accu
               (or (%with-applied-filters new-current-package
                     (fset:with package-accu
                                (make-pak :name
