@@ -36,7 +36,7 @@
 TODO:
 
 OK - remove packages that don't have files
-OK - allow to exclude connections
+OK - allow to exclude connections to a package
 - make connections between clusters
 - count connections between clusters
 - allow attributes to be defined
