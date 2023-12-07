@@ -29,6 +29,15 @@
     (is (= (length (cl-dot:edges-of graph)) 1))
     (cl-dot:dot-graph graph "flat-packages-with-dependencies.png" :format :png)))
 
+(test gen-package-graph--flat-packages-with-dependencies--exclude-edge
+  (let* ((packages `(,(spak:make-pak :name "bar")
+                     ,(spak:make-pak :name "foo"
+                                     :depends-on-pkgs '("bar"))))
+         (graph (make-graph packages :exclude-connections-to '("bar"))))
+    (is-true graph)
+    (is (= (length (cl-dot:nodes-of graph)) 2))
+    (is (= (length (cl-dot:edges-of graph)) 0))))
+
 (test gen-package-graph--flat-packages-replace-pkg-names
   (let* ((packages `(,(spak:make-pak :name "foo.bar.baz")))
          (graph (make-graph packages :replace-pkg-names '(("foo.bar." . "")))))

@@ -23,9 +23,11 @@ is used to keep track of the current cluster object.")
 
 (defvar *all-packages* nil "A list of all raw packages as given to `MAKE-GRAPH'.")
 (defvar *replace-pkg-names* nil "A list of conses of the form (\"old-name\" . \"new-name\").")
+(defvar *exclude-connections-to* nil "A list of package names that should not be connected, aka no edges be created.")
 
 (defun make-graph (packages &key (cluster nil)
-                              (replace-pkg-names nil))
+                              (replace-pkg-names nil)
+                              (exclude-connections-to nil))
   "Generates a `cl-dot:graph' from a list of `spak:pak's.
 If `CLUSTER' is non-nil, the graph will be clustered by the clusters.
 So `PACKAGES' in this case is a plist like this:
@@ -36,10 +38,12 @@ where `:packages' is a list of `spak:pak's generated from `scan-packages'.
 If `REPLACE-PKG-NAMES' is non-nil, the names of the packages will be replaced (or cut)
 based on a provided alist. The alist is a list of conses of the form (\"old-name\" . \"new-name\").
 I.e. if a common  package prefix should be replaced with an empyt string one would provide:
-(\"foo.bar.\" . \"\"), resulting in the package \"foo.bar.baz\" being named \"baz\" in the graph."
+(\"foo.bar.\" . \"\"), resulting in the package \"foo.bar.baz\" being named \"baz\" in the graph.
+`EXCLUDE-CONNECTIONS-TO' is a list of package names that should not be connected, aka no edges be created."
   (setf *current-cluster* nil)
 
-  (let ((*replace-pkg-names* replace-pkg-names))
+  (let ((*replace-pkg-names* replace-pkg-names)
+        (*exclude-connections-to* exclude-connections-to))
     (if cluster
         (cl-dot:generate-graph-from-roots
          'packages
@@ -56,7 +60,7 @@ I.e. if a common  package prefix should be replaced with an empyt string one wou
                                           (setf *all-packages* packages)))))
 
 (defmethod graph-object-node ((graph (eql 'packages)) (object cluster))
-  ;;(format t "node cluster ~a~%" object)
+  (format t "node ~a~%" object)
   (setf *current-cluster*
         (make-instance 'cl-dot:cluster
                        :attributes `(:label ,(cluster-name object)
@@ -64,7 +68,7 @@ I.e. if a common  package prefix should be replaced with an empyt string one wou
   nil)
 
 (defmethod graph-object-node ((graph (eql 'packages)) (object pak))
-  ;;(format t "node pak ~a~%" object)
+  (format t "node ~a~%" object)
   (make-instance 'cl-dot:node
                  :attributes `(:label ,(%maybe-replace-pkg-name (pak-name object))
                                :shape :box)))
@@ -78,7 +82,7 @@ I.e. if a common  package prefix should be replaced with an empyt string one wou
       name))
 
 (defmethod graph-object-points-to ((graph (eql 'packages)) (object pak))
-  ;;(format t "points-to ~a~%" object)
+  (format t "points-to ~a~%" object)
   (let* ((pak-deps (pak-depends-on-pkgs object))
          (dependents
            (loop :for pkg :in pak-deps
@@ -87,14 +91,18 @@ I.e. if a common  package prefix should be replaced with an empyt string one wou
                                                     (equal pkg (pak-name pak)))
                                            :collect pak)
                  :append dependents)))
-    (mapcar (lambda (dep)
-              (make-instance 'cl-dot:attributed
-                             :object dep
-                             :attributes '(:weight 3)))
-            dependents)))
+    (loop :for dep :in dependents
+          :unless (member (pak-name dep) *exclude-connections-to* :test #'equal)
+            :collect (make-instance 'cl-dot:attributed
+                                    :object dep
+                                    :attributes '(:weight 3)))))
+
+(defmethod graph-object-points-to ((graph (eql 'packages)) (object cluster))
+  (format t "points-to ~a~%" object)
+  nil)
 
 (defmethod graph-object-cluster ((graph (eql 'packages)) object)
-  ;;(format t "cluster ~a~%" object)
+  (format t "cluster ~a~%" object)
   (typecase object
     (cluster nil)
     (pak *current-cluster*)))

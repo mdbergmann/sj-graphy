@@ -35,7 +35,8 @@
 #|
 TODO:
 
-- remove packages that don't have files
-
+OK - remove packages that don't have files
+=> - allow to exclude connections
+- allow attributes to be defined
 
 |#
