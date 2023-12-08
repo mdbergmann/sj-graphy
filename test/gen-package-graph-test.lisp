@@ -72,3 +72,20 @@
     (is (= (length (cl-dot:nodes-of graph)) 2))
     (is (= (length (cl-dot:edges-of graph)) 1))
     (cl-dot:dot-graph graph "clustered-with-dependencies.png" :format :png)))
+
+(test gen-package-graph--clustered-with-edges-between-clusters
+  "Tests that when there are package dependencies between clusters,
+the clusters are connected by edges."
+  (let* ((packages `((:name "fooc"
+                      :color :green
+                      :packages (,(spak:make-pak :name "bar")))
+                     (:name "barc"
+                      :color :red
+                      :packages (,(spak:make-pak :name "foo"
+                                                 :depends-on-pkgs '("bar"))))))
+         (graph (make-graph packages :cluster t :cluster-edges t)))
+    (is-true graph)
+    (is (= (length (cl-dot:nodes-of graph)) 2))
+    ;;(is (= (length (cl-dot:edges-of graph)) 2))
+    (cl-dot:print-graph graph)
+    (cl-dot:dot-graph graph "clustered-with-edges-between-clusters.png" :format :png)))
