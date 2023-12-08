@@ -13,17 +13,17 @@
 
 (test gen-package-graph--flat-packages
   (let* ((packages `(,(spak:make-pak :name "foo")))
-         (graph (make-graph packages)))
+         (graph (make-graph `((:nodes ,(mapcar #'pak-to-node packages)
+                               :node-attributes ())))))
     (is-true graph)
     (is (= (length (cl-dot:nodes-of graph)) 1))
     (is (typep (car (cl-dot:nodes-of graph)) 'cl-dot:node))
     (cl-dot:dot-graph graph "flat-packages.png" :format :png)))
 
 (test gen-package-graph--flat-packages-with-dependencies
-  (let* ((packages `(,(spak:make-pak :name "bar")
-                     ,(spak:make-pak :name "foo"
-                                     :depends-on-pkgs '("bar"))))
-         (graph (make-graph packages)))
+  (let ((graph (make-graph `((:nodes (,(pak-to-node (spak:make-pak :name "bar"))))
+                             (:nodes (,(pak-to-node (spak:make-pak :name "foo"
+                                                                   :depends-on-pkgs '("bar")))))))))
     (is-true graph)
     (is (= (length (cl-dot:nodes-of graph)) 2))
     (is (= (length (cl-dot:edges-of graph)) 1))
@@ -33,41 +33,45 @@
   (let* ((packages `(,(spak:make-pak :name "bar")
                      ,(spak:make-pak :name "foo"
                                      :depends-on-pkgs '("bar"))))
-         (graph (make-graph packages :exclude-connections-to '("bar"))))
+         (graph (make-graph `((:nodes ,(mapcar #'pak-to-node packages)))
+                            :exclude-connections-to '("bar"))))
     (is-true graph)
     (is (= (length (cl-dot:nodes-of graph)) 2))
     (is (= (length (cl-dot:edges-of graph)) 0))))
 
-(test gen-package-graph--flat-packages-replace-pkg-names
+(test gen-package-graph--flat-packages-replace-node-names
   (let* ((packages `(,(spak:make-pak :name "foo.bar.baz")))
-         (graph (make-graph packages :replace-pkg-names '(("foo.bar." . "")))))
+         (graph (make-graph `((:nodes ,(mapcar #'pak-to-node packages)))
+                            :replace-node-names '(("foo.bar." . "")))))
     (is (= (length (cl-dot:nodes-of graph)) 1))
     (is (equal (getf (cl-dot:attributes-of (car (cl-dot:nodes-of graph)))
                      :label)
                "baz"))))
 
 (test gen-package-graph--clustered
-  (let* ((packages `((:name "fooc"
-                      :color :green
-                      :packages (,(spak:make-pak :name "foo")))
-                     (:name "barc"
-                      :color :red
-                      :packages (,(spak:make-pak :name "bar")))))
-         (graph (make-graph packages :cluster t)))
+  (let* ((node-sets `((:name "fooc"
+                       :cluster-attributes (:bgcolor :green)
+                       :nodes (,(pak-to-node (spak:make-pak :name "foo")))
+                       :node-attributes ())
+                      (:name "barc"
+                       :cluster-attributes (:bgcolor :red)
+                       :nodes (,(pak-to-node (spak:make-pak :name "bar")))
+                       :node-attributes ())))
+         (graph (make-graph node-sets :cluster t)))
     (is-true graph)
     (is (= (length (cl-dot:nodes-of graph)) 2))
     (is (typep (car (cl-dot:nodes-of graph)) 'cl-dot:node))
     (cl-dot:dot-graph graph "clustered.png" :format :png)))
 
 (test gen-package-graph--clustered-with-dependencies
-  (let* ((packages `((:name "fooc"
-                      :color :green
-                      :packages (,(spak:make-pak :name "bar")))
-                     (:name "barc"
-                      :color :red
-                      :packages (,(spak:make-pak :name "foo"
-                                                 :depends-on-pkgs '("bar"))))))
-         (graph (make-graph packages :cluster t)))
+  (let* ((node-sets `((:name "fooc"
+                       :cluster-attributes (:bgcolor :green)
+                       :nodes (,(pak-to-node (spak:make-pak :name "bar"))))
+                      (:name "barc"
+                       :cluster-attributes (:bgcolor :red)
+                       :nodes (,(pak-to-node (spak:make-pak :name "foo"
+                                                            :depends-on-pkgs '("bar")))))))
+         (graph (make-graph node-sets :cluster t)))
     (is-true graph)
     (is (= (length (cl-dot:nodes-of graph)) 2))
     (is (= (length (cl-dot:edges-of graph)) 1))
@@ -76,21 +80,32 @@
 (test gen-package-graph--clustered-with-edges-between-clusters
   "Tests that when there are package dependencies between clusters,
 the clusters are connected by edges."
-  (let* ((packages `((:name "fooc"
-                      :color :green
-                      :packages (,(spak:make-pak :name "bar")))
-                     (:name "barc"
-                      :color :red
-                      :packages (,(spak:make-pak :name "foo"
-                                                 :depends-on-pkgs '("bar"))))))
-         (graph (make-graph packages :cluster t :cluster-edges t)))
+  (let* ((node-sets `((:name "fooc"
+                       :cluster-attributes (:bgcolor :green)
+                       :nodes (,(pak-to-node (spak:make-pak :name "bar")))
+                       :node-attributes (:fillcolor :red))
+                      (:name "barc"
+                       :cluster-attributes (:bgcolor :red)
+                       :nodes (,(pak-to-node (spak:make-pak :name "foo"
+                                                            :depends-on-pkgs '("bar"))))
+                       :node-attributes (:fillcolor :blue :style :filled))))
+         (graph (make-graph node-sets :cluster t :cluster-edges t)))
     (is-true graph)
     (is (= (length (cl-dot:nodes-of graph)) 2))
     (is (= (length (cl-dot:edges-of graph)) 1))
     (let ((grapg-str
             (with-output-to-string (s)
               (cl-dot:print-graph graph :stream s))))
+      (print grapg-str)
       (is (search
            "\"2\" -> \"1\"[weight=\"5\",lhead=\"cluster_fooc\",ltail=\"cluster_barc\"];"
-           grapg-str)))
+           grapg-str))
+      (is (search
+           "bgcolor=\"GREEN\";
+    \"1\" [label=\"bar\",fillcolor=\"RED\"];
+  }" grapg-str))
+      (is (search
+           "bgcolor=\"RED\";
+    \"2\" [label=\"foo\",fillcolor=\"BLUE\",style=filled];
+  }" grapg-str)))
     (cl-dot:dot-graph graph "clustered-with-edges-between-clusters.png" :format :png)))
