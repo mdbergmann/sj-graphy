@@ -86,6 +86,11 @@ the clusters are connected by edges."
          (graph (make-graph packages :cluster t :cluster-edges t)))
     (is-true graph)
     (is (= (length (cl-dot:nodes-of graph)) 2))
-    ;;(is (= (length (cl-dot:edges-of graph)) 2))
-    (cl-dot:print-graph graph)
+    (is (= (length (cl-dot:edges-of graph)) 1))
+    (let ((grapg-str
+            (with-output-to-string (s)
+              (cl-dot:print-graph graph :stream s))))
+      (is (search
+           "\"2\" -> \"1\"[weight=\"5\",lhead=\"cluster_fooc\",ltail=\"cluster_barc\"];"
+           grapg-str)))
     (cl-dot:dot-graph graph "clustered-with-edges-between-clusters.png" :format :png)))

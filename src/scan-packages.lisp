@@ -59,13 +59,11 @@ Those are just package dependencies, not class dependencies.
   (let* ((source-type-dir (ecase source-type
                             (:source "main")
                             (:test "test")))
-         (real-path (make-pathname
-                     :directory
-                     (list :relative
-                           path
-                           *default-source-root*
-                           source-type-dir
-                           *source-file-type*))))
+         (real-path (format nil "~a/~a/~a/~a"
+                            path
+                            *default-source-root*
+                            source-type-dir
+                            *source-file-type*)))
     (format t "real-path: ~a~%" real-path)
     (assert (probe-file real-path) nil "Path ~a does not exist." real-path)
     (let ((*collect-package-deps* collect-pak-deps)
@@ -84,9 +82,8 @@ Those are just package dependencies, not class dependencies.
 `SCAN-PACKAGES' can be called directly.
 But special vars (`*collect-package-deps*', `*exclude-filter*', `*include-filter*') must be set manually."
   (check-type path (or pathname string))
-  (when (stringp path)
-    (setf path (pathname path)))
-  (assert (probe-file path) nil "Path ~a does not exist." path)
+  (setf path (probe-file path))
+  (assert path nil "Path ~a does not exist." path)
 
   ;;(format t "real-path: ~a~%" real-path)
   (fset:convert 'list

@@ -103,11 +103,21 @@ I.e. if a common  package prefix should be replaced with an empyt string one wou
 
 (defmethod graph-object-points-to ((graph (eql 'packages)) (object node))
   (format t "points-to ~a~%" object)
-  (mapcar (lambda (ref)
-            (make-instance 'cl-dot:attributed
-                           :object ref
-                           :attributes '(:weight 3)))
-          (%find-all-referencing-nodes-of object)))
+  (let ((cluster (node-cluster object)))
+    (mapcar (lambda (ref)
+              (if (and *cluster-edges*
+                       (not (eq cluster (node-cluster ref))))
+                  (make-instance 'cl-dot:attributed
+                                 :object ref
+                                 :attributes `(:weight 5
+                                               :lhead ,(format nil "cluster_~a"
+                                                               (cluster-name (node-cluster ref)))
+                                               :ltail ,(format nil "cluster_~a"
+                                                               (cluster-name cluster))))
+                  (make-instance 'cl-dot:attributed
+                                 :object ref
+                                 :attributes '(:weight 3))))
+            (%find-all-referencing-nodes-of object))))
 
 (defun %find-all-referencing-nodes-of (node)
   (let* ((node-deps (node-depends-on node))
