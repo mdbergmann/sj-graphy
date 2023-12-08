@@ -164,7 +164,7 @@ Returns a list of packages."
                      (ppcre:scan-to-strings
                       "(?-i)^import\\s+([a-z0-9\\.]*)($|\\.[A-Z\\{_\\*].*$)"
                       line)
-                   (when (and match (not (null res)))
+                   (when (and match res)
                      (setf deps (fset:with deps (elt res 0)))))))
     deps))
 
