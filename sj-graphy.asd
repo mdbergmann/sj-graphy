@@ -38,7 +38,8 @@ TODO:
 OK - remove packages that don't have files
 OK - allow to exclude connections to a package
 OK - make connections between clusters
-=> - allow attributes to be defined
+OK - allow attributes to be defined
 - count connections between clusters
+- allow global graph attributes
 
 |#

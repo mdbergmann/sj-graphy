@@ -39,7 +39,8 @@ is used to keep track of the current cluster object.")
                                (cluster nil)
                                (cluster-edges nil)
                                (replace-node-names nil)
-                               (exclude-connections-to nil))
+                               (exclude-connections-to nil)
+                               (attributes nil))
   "Generates a `CL-DOT:GRAPH' from a list of `NODE' sets.
 If `CLUSTER' is non-nil, the graph will be clustered by the clusters:
 `NODE-SETS' in this case is a plist like this:
@@ -79,7 +80,7 @@ I.e. if a common  package prefix should be replaced with an empyt string one wou
                                             nodes)))))
                        node-sets
                        :initial-value nil))
-         '(:compound t))
+         (list* :compound t attributes))
         (cl-dot:generate-graph-from-roots
          'packages
          (setf *all-nodes*
@@ -95,7 +96,8 @@ I.e. if a common  package prefix should be replaced with an empyt string one wou
                                              node)
                                            nodes))))
                        node-sets
-                       :initial-value nil))))))
+                       :initial-value nil))
+         attributes))))
 
 (defmethod graph-object-node ((graph (eql 'packages)) (object cluster))
   (format t "node ~a~%" object)
