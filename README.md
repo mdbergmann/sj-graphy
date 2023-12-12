@@ -4,6 +4,7 @@ Dependency graphs for Java/Scala made in Common Lisp. :)
 Work in progress...
 
 Can only create graphs for packages, not classes.
+It can scan imports to detect dependencies.
 
 Some examples:
 
