@@ -1,5 +1,5 @@
 # sj-graphy
-Dependency graphs for Java/Scala
+Dependency graphs for Java/Scala made in Common Lisp. :)
 
 Work in progress...
 
