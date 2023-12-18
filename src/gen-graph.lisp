@@ -1,4 +1,4 @@
-(defpackage :sj-graphy.gen-package-graph
+(defpackage :sj-graphy.gen-graph
   (:use :cl)
   (:nicknames :genpak)
   (:import-from #:spak
@@ -15,7 +15,7 @@
            #:pak-to-node)
   )
 
-(in-package :sj-graphy.gen-package-graph)
+(in-package :sj-graphy.gen-graph)
 
 (defstruct cluster name attributes)
 (defstruct node name cluster depends-on node-attributes)
